@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Http\Request;
+use App\Models\Dish;
 use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
@@ -19,50 +20,49 @@ class OrderController extends Controller
 
     // Créer une nouvelle commande
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'user_id' => 'required|exists:users,id',
-            'notes' => 'nullable|string',
-            'items' => 'required|array|min:1',
-            'items.*.dish_id' => 'required|exists:dishes,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_price' => 'required|numeric|min:0',
+{
+    $validated = $request->validate([
+        'notes' => 'nullable|string',
+        'items' => 'required|array|min:1',
+        'items.*.dish_id' => 'required|exists:dishes,id',
+        'items.*.quantity' => 'required|integer|min:1',
+    ]);
+
+    $order = DB::transaction(function () use ($validated, $request) {
+        // Les vrais prix viennent de la base, pas du navigateur
+        $dishes = Dish::whereIn('id', collect($validated['items'])->pluck('dish_id'))
+            ->get()
+            ->keyBy('id');
+
+        $totalAmount = 0;
+        foreach ($validated['items'] as $item) {
+            $totalAmount += $item['quantity'] * $dishes[$item['dish_id']]->price;
+        }
+
+        $order = Order::create([
+            'user_id' => $request->user()->id,
+            'total_amount' => $totalAmount,
+            'status' => 'pending',
+            'notes' => $validated['notes'] ?? null,
         ]);
 
-        // Utilisation d'une transaction pour s'assurer que tout s'enregistre bien
-        $order = DB::transaction(function () use ($validated) {
-            // Calculer le montant total
-            $totalAmount = 0;
-            foreach ($validated['items'] as $item) {
-                $totalAmount += $item['quantity'] * $item['unit_price'];
-            }
-
-            // Créer la commande principale
-            $order = Order::create([
-                'user_id' => $validated['user_id'],
-                'total_amount' => $totalAmount,
-                'status' => 'pending',
-                'notes' => $validated['notes'] ?? null,
+        foreach ($validated['items'] as $item) {
+            OrderItem::create([
+                'order_id' => $order->id,
+                'dish_id' => $item['dish_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $dishes[$item['dish_id']]->price,
             ]);
+        }
 
-            // Créer les lignes de commande (articles)
-            foreach ($validated['items'] as $item) {
-                OrderItem::create([
-                    'order_id' => $order->id,
-                    'dish_id' => $item['dish_id'],
-                    'quantity' => $item['quantity'],
-                    'unit_price' => $item['unit_price'],
-                ]);
-            }
+        return $order;
+    });
 
-            return $order;
-        });
-
-        return response()->json([
-            'message' => 'Commande passée avec succès !',
-            'data' => $order->load('orderItems.dish')
-        ], 201);
-    }
+    return response()->json([
+        'message' => 'Commande passée avec succès !',
+        'data' => $order->load('orderItems.dish'),
+    ], 201);
+}
 
     // Afficher une commande spécifique
     public function show(Order $order)

@@ -3,9 +3,9 @@
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\DishController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\AuthController;
 
 // Routes pour les catégories (CRUD complet)
 Route::apiResource('categories', CategoryController::class);
@@ -14,9 +14,16 @@ Route::apiResource('categories', CategoryController::class);
 Route::apiResource('dishes', DishController::class);
 
 // Routes pour les commandes
-Route::apiResource('orders', OrderController::class);
+// Route spécifique pour changer le statut d'une commande
+Route::middleware('auth:sanctum')->group(function () {
+    Route::apiResource('orders', OrderController::class);
+    Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
+});
 
-// Route spécifique pour permettre au cuisinier/admin de changer le statut d'une commande
-Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus']);
-// Route spécifique pour permettre a mon front de voir le back
+// Route de connexion pour le frontend
 Route::post('/login', [AuthController::class, 'login']);
+
+// Route pour récupérer l'utilisateur connecté via Sanctum
+Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
+    return $request->user();
+});
