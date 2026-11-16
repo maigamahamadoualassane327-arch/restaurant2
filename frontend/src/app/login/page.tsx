@@ -27,7 +27,7 @@ export default function LoginPage() {
 
       if (role === 'admin') {
         router.push('/admin');
-      } else if (role === 'chef') {
+      } else if (role === 'cook') {
         router.push('/kitchen');
       } else {
         router.push('/menu');

@@ -13,12 +13,8 @@ class Dish extends Model
       use HasFactory;
 
     protected $fillable = [
-        'category_id',
-        'name',
-        'description',
-        'price',
-        'is_available',
-    ];
+    'category_id', 'name', 'description', 'price', 'is_available', 'image',
+];
 
     public function category()
 {
@@ -29,4 +25,9 @@ public function orderItems()
 {
     return $this->hasMany(OrderItem::class);
 }
+
+protected $casts = [
+    'is_available' => 'boolean',
+];
+
 }

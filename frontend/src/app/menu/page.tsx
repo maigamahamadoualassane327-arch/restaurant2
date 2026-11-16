@@ -1,13 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axiosClient from '../../lib/axios';
+import Link from 'next/link';
+import axiosClient, { imageUrl } from '../../lib/axios';
 
 type Dish = {
   id: number;
   name: string;
   description: string | null;
   price: string | number;
+  image: string | null;
 };
 
 type Category = {
@@ -99,11 +101,13 @@ export default function MenuPage() {
     .filter((c) => selectedCategory === null || c.id === selectedCategory)
     .map((c) => ({
       ...c,
-      dishes: c.dishes.filter((d) =>
-        d.name.toLowerCase().includes(search.trim().toLowerCase())
-      ),
+      dishes: c.dishes.filter(
+  (d) =>
+    d.is_available &&
+    d.name.toLowerCase().includes(search.trim().toLowerCase())
+),
     }))
-    .filter((c) => c.dishes.length > 0);
+    .filter((c) => c.dishes.length > 0);  
 
   const chip = (active: boolean) =>
     `rounded-full border px-4 py-1 text-sm ${
@@ -117,9 +121,14 @@ export default function MenuPage() {
     <main className="mx-auto max-w-4xl p-8">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Carte du restaurant</h1>
-        <span className="rounded-full bg-black px-4 py-1 text-sm text-white">
-          Panier : {itemCount} · {total.toFixed(2)} €
-        </span>
+        <div className="flex items-center gap-3">
+  <Link href="/orders" className="text-sm underline">
+    Mes commandes
+   </Link>
+    <span className="rounded-full bg-black px-4 py-1 text-sm text-white">
+    Panier : {itemCount} · {total.toFixed(2)} €
+    </span>
+    </div>
       </div>
 
       <input
@@ -155,6 +164,15 @@ export default function MenuPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             {category.dishes.map((dish) => (
               <div key={dish.id} className="rounded-lg border p-4 shadow-sm">
+                
+                {dish.image && (
+               <img
+               src={imageUrl(dish.image)}
+                alt={dish.name}
+                 className="mb-3 h-40 w-full rounded object-cover"
+                 />
+                 )}
+
                 <div className="flex justify-between">
                   <h3 className="font-medium">{dish.name}</h3>
                   <span className="font-semibold">

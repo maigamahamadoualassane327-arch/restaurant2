@@ -7,11 +7,16 @@ use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-// Routes pour les catégories (CRUD complet)
-Route::apiResource('categories', CategoryController::class);
+// Lecture publique du menu
+Route::get('categories', [CategoryController::class, 'index']);
+Route::get('dishes', [DishController::class, 'index']);
 
-// Routes pour les plats (CRUD complet)
-Route::apiResource('dishes', DishController::class);
+// Modifications : admin seulement
+Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    Route::apiResource('categories', CategoryController::class)->except(['index']);
+    Route::apiResource('dishes', DishController::class)->except(['index']);
+    Route::post('dishes/{dish}/image', [DishController::class, 'uploadImage']);
+});
 
 // Routes pour les commandes
 // Route spécifique pour changer le statut d'une commande

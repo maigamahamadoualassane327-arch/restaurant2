@@ -11,3 +11,6 @@ const axiosClient = axios.create({
 });
 
 export default axiosClient;
+// Adresse complète d'une image enregistrée par Laravel
+export const imageUrl = (path: string) =>
+  (axiosClient.defaults.baseURL ?? '').replace(/\/$/, '') + '/storage/' + path;

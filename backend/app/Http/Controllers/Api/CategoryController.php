@@ -55,11 +55,15 @@ class CategoryController extends Controller
 
     // Supprimer une catégorie
     public function destroy(Category $category)
-    {
-        $category->delete();
-
+  {
+    if ($category->dishes()->exists()) {
         return response()->json([
-            'message' => 'Catégorie supprimée avec succès !'
-        ]);
+            'message' => 'Cette catégorie contient encore des plats.',
+        ], 422);
     }
+
+    $category->delete();
+
+    return response()->json(['message' => 'Catégorie supprimée avec succès !']);
+  }
 }
