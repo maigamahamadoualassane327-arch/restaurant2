@@ -36,6 +36,17 @@ class OrderController extends Controller
         'items.*.quantity' => 'required|integer|min:1',
     ]);
 
+    $unavailable = Dish::whereIn('id', collect($validated['items'])->pluck('dish_id'))
+    ->where('is_available', false)
+    ->pluck('name');
+
+    if ($unavailable->isNotEmpty()) {
+    return response()->json([
+        'message' => 'Plat(s) indisponible(s) : ' . $unavailable->implode(', '),
+    ], 422);
+    
+   }
+
     $order = DB::transaction(function () use ($validated, $request) {
         // Les vrais prix viennent de la base, pas du navigateur
         $dishes = Dish::whereIn('id', collect($validated['items'])->pluck('dish_id'))

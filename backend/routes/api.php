@@ -32,3 +32,6 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
 });
+// Route pour la connection ou la deconnection
+
+Route::middleware('auth:sanctum')->post('/logout', [AuthController::class, 'logout']);
